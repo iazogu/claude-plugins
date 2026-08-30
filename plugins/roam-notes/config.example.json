@@ -1,0 +1,8 @@
+{
+  "graph": "my-graph-nickname",
+  "section": "Claude Code",
+  "tag": "#claude-notes",
+  "projects": {
+    "/absolute/path/to/some-repo": "Some Repo Page Title"
+  }
+}
