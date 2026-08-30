@@ -1,16 +1,15 @@
 # roam-notes model eval — dry-run results
 
 Run on 2026-08-30, macOS, plugin installed at user scope from the local directory
-marketplace (`roam-notes@iazogu-plugins`, live-linked to this repo). Model: `sonnet`.
-All commands run from the repo root. No Roam write occurred in any run.
+marketplace (`roam-notes@<marketplace>`, refreshed from this repo before each batch).
+Model: `sonnet`. All commands run from the repo root. No Roam write occurred in any run.
+The two debugging-session arms were re-run on 2026-08-30 after the final whole-branch
+review found that `template.md`'s worked example shared its scenario and several verbatim
+strings with the `debugging-session` fixture, which contaminated the original arm.
 
 ## Procedure actually used
 
-`evals/README.md` documents this command:
-
-    claude -p --plugin-dir plugins/roam-notes --model sonnet "…"
-
-Two deviations were forced by the harness (see *Deviations* below):
+`evals/README.md` documents this command, and it is what these runs used:
 
     ALLOW="Bash,Read,Glob,Write,Task,ToolSearch,\
     mcp__roam-mcp__list_graphs,mcp__roam-mcp__get_graph_guidelines,\
@@ -21,8 +20,10 @@ Two deviations were forced by the harness (see *Deviations* below):
     claude -p --allowedTools "$ALLOW" --model sonnet \
       "Here is a summary of a work session I just finished:\n\n$(cat /tmp/narrative.md)\n\nNote this to Roam as a dry run (do not write)." < /dev/null
 
-`--plugin-dir` is omitted because the plugin is installed. The baseline arm is the same
-command with the plugin disabled (`claude plugin disable roam-notes`).
+The plugin is installed at user scope, so no `--plugin-dir` is needed. The allowlist, the
+flag order and the `< /dev/null` were added to the README after the first attempt hit the
+harness limits recorded under *Deviations* below. The baseline arm is the same command with
+the plugin disabled (`claude plugin disable roam-notes`).
 
 ## Scores
 
@@ -32,30 +33,42 @@ Checks are the eight in `rubric.md`, in order:
 
 | Run | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | Score |
 |---|---|---|---|---|---|---|---|---|---|
-| debugging-session — with plugin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 8/8 |
+| debugging-session — with plugin (re-run, decontaminated template) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 8/8 |
 | feature-build — with plugin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 8/8 |
 | config-session — with plugin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 8/8 |
-| debugging-session — baseline (plugin disabled) | ✗ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ | ✗ | 4/8 |
+| debugging-session — baseline (plugin disabled), re-run | — | — | — | — | — | — | — | — | not scored |
 
-Plan expectation: with-plugin ≥ 7/8 on every fixture — **met** (8/8 × 3). Baseline fails
-check 2, 7 or 8 on at least one — **met** (baseline fails 7 and 8, plus 1 and 3).
+Plan expectation: with-plugin ≥ 7/8 on every fixture — **met** (8/8 × 3), and the
+debugging-session arm holds at 8/8 with the template's worked example moved to an unrelated
+domain, so the original score was not an artefact of the shared scenario.
 
-### Justification for every ✗ (baseline row only)
+Baseline fails check 2, 7 or 8 on at least one — **no longer demonstrated by this re-run**.
+Both baseline attempts were invalid (below); the last uncontaminated baseline measurement is
+the original batch's 4/8, which is superseded rather than reproduced.
 
-- **1 anchor ✗** — the first line (`**[[acme-billing]]** — nightly invoice job double-charged ~3% of customers #postmortem`) says what the session was about but never says what the project *is*; the "Django + Celery invoicing service" half of the anchor is missing.
-- **3 sentences with referents ✗** — `**Fix:**`, `**Changed:**` and `**Commit:**` are label-plus-fragment items, not complete sentences (e.g. `Idempotency key derived from invoice id (Stripe confirmed dedup)`).
-- **7 no log ✗** — `**Changed:** billing/tasks.py, billing/models.py, billing/tests/test_charge.py (+3 tests, 41/41 passing)` is exactly the file list and test count the check forbids, and `**Commit:**` adds commit-log narration.
-- **8 fixture contract ✗** — both MUST-INCLUDE facts are present, but the MUST-EXCLUDE item "the list of files touched or the test count" appears verbatim in the `**Changed:**` bullet.
+### Why the re-run baseline is not scored
 
-### Borderline calls on the baseline row (scored ✓, flagged for spot-check)
+The baseline arm runs from the repo root with the plugin *disabled* — but the plugin's own
+source is still sitting in that working directory, and `--allowedTools` grants `Read`, `Glob`
+and `Bash`. Both attempts read it:
 
-- **2 caps ✓** — the note has no Learnings/Sparks structure at all, so the caps barely map; counted literally it has 5 top-level body bullets (≤ 5) and 0 sparks (≤ 2), so it passes numerically. Counting the two `**Fix:**` sub-bullets as separate learnings would make it 6 and fail.
-- **4 sparks generative ✓** — vacuous: there are zero sparks.
-- **6 Roam syntax ✓** — read as a syntax check: a `#tag` is present on the first line, no `- [ ]`, no `####`, no italics. Note the tag is an invented `#postmortem`, not the resolver's configured `#claude-notes`; if `#tag` in the rubric means *the configured tag*, this is a ✗ and the baseline scores 3/8.
+- **Attempt 1** said so outright: *"I ran the roam-notes dry-run pipeline by hand (its
+  `note-companion` agent isn't registered as a callable type in this session, so I executed
+  its documented steps directly)"*, then reproduced `resolve.sh`'s page derivation and
+  `nestUnder: "Claude Code"`. Its note would score 8/8 on the rubric — which is precisely why
+  it cannot be recorded as a baseline: it measures "the plugin's instructions read off disk",
+  not "no plugin".
+- **Attempt 2** read `evals/results.md` itself and answered by comparing against Run 1 rather
+  than composing a note at all, so there is nothing to score.
+
+Two attempts is the cap, so the arm is left unscored. Re-establishing a valid baseline needs a
+working directory that does not contain the plugin's source (and no recorded results to read);
+that is a change to the documented procedure, so it is left for the orchestrator. The original
+batch's baseline happened to avoid this exposure, which is why it scored 4/8.
 
 ### Borderline calls on the with-plugin rows (scored ✓, flagged for spot-check)
 
-- **debugging-session, check 8** — MUST-EXCLUDE forbids "the timezone red herring presented as a learning rather than as a ruled-out cause". The third learning does occupy a learning slot, but is framed explicitly as a ruled-out cause ("The cron timezone was a red herring… the cron ran correctly once"), which is the framing the exclusion permits. Scored ✓ on that reading.
+- **debugging-session (re-run), check 8** — MUST-EXCLUDE forbids "the timezone red herring presented as a learning rather than as a ruled-out cause". The third learning occupies a learning slot but is framed explicitly as a ruled-out cause ("looked like a DST/timezone bug but was a red herring — the cron fired exactly once"), which is the framing the exclusion permits. Scored ✓ on that reading, the same reading used in the original batch.
 - **feature-build, check 8** — MUST-EXCLUDE forbids "next week's task as a learning". The region-size estimate appears only in a **spark**, phrased as a question, not as a learning. Scored ✓ on that reading.
 - **config-session, check 8** — MUST-EXCLUDE forbids "the step-by-step command sequence as a list". The learnings do quote commands, but as causal gotchas rather than an ordered recipe. Scored ✓.
 
@@ -75,8 +88,7 @@ check 2, 7 or 8 on at least one — **met** (baseline fails 7 and 8, plus 1 and 
    prompt. `claude -p --model sonnet --allowedTools "…" "PROMPT"` fails with
    `Error: Input must be provided either through stdin or as a prompt argument`.
 
-`evals/README.md` still documents the original command and was **not** updated — that is a
-call for the orchestrator, since it changes a Task-8 deliverable.
+`evals/README.md` documents this invocation, so the command above and the README agree.
 
 ## Findings worth the orchestrator's attention
 
@@ -86,11 +98,11 @@ call for the orchestrator, since it changes a Task-8 deliverable.
   *vacuously* in all four runs. Check 5's real behaviour ("links were applied
   `suggest_links` suggestions") is therefore **untested** by this eval.
 - **Project-page derivation is inconsistent across runs.** The resolver derives the page
-  from the cwd, which is this repo, so `debugging-session` and `feature-build` were both
-  filed under `[[Claude Plugins]]` while their narratives describe `acme-billing` and
-  `trail-maps`; both runs flagged the mismatch to the user unprompted, which is good
-  behaviour. But `config-session` instead used `[[Home Lab]]`, matching its narrative
-  rather than the cwd. Same prompt shape, same cwd, different page-selection policy.
+  from the cwd, which is this repo, so `feature-build` was filed under `[[Claude Plugins]]`
+  while its narrative describes `trail-maps`; that run flagged the mismatch to the user
+  unprompted, which is good behaviour. `config-session` instead used `[[Home Lab]]` and the
+  debugging-session re-run `[[Acme Billing]]`, both matching the narrative rather than the
+  cwd and both saying so. Same prompt shape, same cwd, different page-selection policy.
 - **Harness limitation.** Because `README.md` specifies running from the repo root, no
   fixture whose narrative names a different project can exercise the project-link half of
   check 1 faithfully. Check 1 was scored on anchor *shape* (link present + what the project
@@ -99,7 +111,7 @@ call for the orchestrator, since it changes a Task-8 deliverable.
 
 ## Full run outputs (verbatim)
 
-### Run 0 — debugging-session, with plugin, README command verbatim (no scoreable output)
+### Run 0 — debugging-session, with plugin, original batch, README command verbatim (no scoreable output)
 
 `claude -p --model sonnet "…"` — MCP tools denied in `-p` mode; not scored.
 
@@ -112,28 +124,33 @@ To actually run this (even as a dry run), the `mcp__roam-mcp__*` tools need to b
 The composed note itself (shown above) is ready whenever you want to try again — nothing about the content is blocked, just the Roam-side access.
 ````
 
-### Run 1 — debugging-session, with plugin (scored, 8/8)
+### Run 1 — debugging-session, with plugin, re-run after the template rewrite (scored, 8/8)
 
 `claude -p --allowedTools "$ALLOW" --model sonnet "…" < /dev/null`
 
+The repo's own `docs/superpowers/plans` directory was moved aside for the duration of each
+re-run: with the milestone hook now watching that directory, a first attempt had its Stop
+hook fire mid-run on this repo's completed plan and the session composed a *second*, unrelated
+note about building the plugin, leaving no scoreable final message. Moving the directory back
+afterwards leaves the plan file's content and mtime untouched.
+
 ````
-Dry run finished — nothing was written to Roam. Here's what it would have written to today's daily note (Aug 30, under a new "Claude Code" section):
+Dry run complete — nothing written to Roam. Preview:
 
 ```
-- **[[Claude Plugins]]** — The Django + Celery service that issues our monthly invoices. Today we found why the nightly job double-charged 3% of customers. #claude-notes
+- **[[Acme Billing]]** — Acme Billing is a Django + Celery invoicing service. This session tracked down why the nightly invoice job double-charged about 3% of customers. #claude-notes
   - **Learnings**
-    - The double charge came from Celery retrying a task that had already charged: `acks_late=True` re-queues on timeout past the 30-second soft time limit, and `stripe.Charge.create` was called without an idempotency key.
-    - Stripe idempotency keys expire after 24 hours, so relying on them alone doesn't prevent a retry the following night from double-charging — we added a check on `invoice.charged_at` as a second guard.
-    - The cron timezone was a red herring: the 02:00 clustering suggested a DST bug, but the cron ran correctly once; the duplicate charge happened inside the Celery worker, about 31 seconds apart.
+    - The double charges came from Celery's `acks_late=True` re-delivering `charge_invoice` after the first run blew past its 30s soft time limit, so the redelivered task fired `stripe.Charge.create` again about 31 seconds later with no idempotency key to stop it.
+    - Stripe idempotency keys expire after 24 hours, so keying charges on the invoice id alone would not prevent a repeat double-charge on a retry the following night — the fix also had to gate on `invoice.charged_at` before ever calling Stripe.
+    - The duplicates clustering around 02:00 looked like a DST/timezone bug but was a red herring — the cron fired exactly once; the real cause was task duration relative to the soft time limit, unrelated to the hour.
   - **Sparks**
-    - Which other Celery tasks in this codebase have `acks_late=True` paired with a non-idempotent side effect?
-    - Could the idempotency key encode a longer window (e.g. invoice period) so retries across days still dedupe without needing the `charged_at` check?
+    - Are there other Celery tasks with `acks_late=True` calling non-idempotent external APIs (email sends, webhook posts) that could double-fire the same way?
+    - Could the soft time limit be raised, or the Stripe call moved earlier in the task, so slow runs never approach the limit in the first place?
 ```
 
-Two things to know before a real write:
-- **Wrong project page**: it's filed under `[[Claude Plugins]]` (derived from this repo's folder name) rather than `[[Acme Billing]]`, since acme-billing isn't this repo. Fix by running the skill from the acme-billing repo, or adding `.claude/roam-notes.json` there with `"page": "Acme Billing"`.
-- **Link suggestions unavailable**: the graph's `suggest_links` tool errored server-side, so no `[[...]]` links beyond the project link would be added.
+It would append this under a new "Claude Code" section on today's daily note (Aug 30, 2026) in the `<graph>` graph, under `[[Acme Billing]]` — that page override was mine, not the resolver's default (`Claude Plugins`). Say the word if you want me to actually write it.
 ````
+
 
 ### Run 2 — feature-build, with plugin (scored, 8/8)
 
@@ -153,7 +170,7 @@ Dry run complete — nothing was written. Preview:
     - Now that the cache key excludes the token, could tiles be pre-seeded or shared across sessions without re-authenticating?
 ```
 
-Would land under **Claude Code** on today's daily note (Aug 30, 2026), on graph `nexveil` (the only one configured).
+Would land under **Claude Code** on today's daily note (Aug 30, 2026), on graph `<graph>` (the only one configured).
 
 Two things flagged by the agent, worth your attention before a real write:
 1. **Page mismatch** — as noted earlier, it's titled `[[Claude Plugins]]` (derived from this repo) even though the content is about trail-maps. A real run from here would misfile it; you'd want a `.claude/roam-notes.json` override or to run this from the trail-maps repo.
@@ -165,7 +182,7 @@ Two things flagged by the agent, worth your attention before a real write:
 `claude -p --allowedTools "$ALLOW" --model sonnet "…" < /dev/null`
 
 ````
-Dry run complete — nothing was written to Roam. Here's what it would have added under **Claude Code** on today's daily note (August 30th, 2026), in the `nexveil` graph:
+Dry run complete — nothing was written to Roam. Here's what it would have added under **Claude Code** on today's daily note (August 30th, 2026), in the `<graph>` graph:
 
 > - **[[Home Lab]]** — Home-lab is a Raspberry Pi behind Tailscale; this session turned it into a Tailscale exit node so phones can route traffic through home. #claude-notes
 >   - **Learnings**
@@ -180,29 +197,50 @@ Dry run complete — nothing was written to Roam. Here's what it would have adde
 One note: link suggestions couldn't run (the `suggest_links` action isn't implemented on this MCP server), so no auto-linking was attempted beyond the `[[Home Lab]]` page reference. Say the word if you want this actually written.
 ````
 
-### Run 4 — debugging-session, BASELINE with plugin disabled (scored, 4/8)
+### Run 4 — debugging-session, BASELINE with plugin disabled, re-run (not scored)
 
-`claude plugin disable roam-notes` then the same command; plugin re-enabled and verified afterwards.
+`claude plugin disable roam-notes` then the same command; plugin re-enabled and verified with
+`claude plugin list` after each attempt (`✔ enabled`). Both attempts read the plugin's source
+out of the working directory, so neither is a baseline — see *Why the re-run baseline is not
+scored*.
+
+**Attempt 1** — composed a full note, but by executing the skill's documented steps read from
+disk:
 
 ````
-Today's daily note (`August 30th, 2026`) is empty aside from the title, and this graph has no recorded guidelines (naming conventions, structural preferences), so there's no established pattern to match. Here's the draft entry, formatted in Roam markdown, that I would append to today's daily note — **nothing has been written**, per the dry-run request:
+I ran the roam-notes dry-run pipeline by hand (its `note-companion` agent isn't registered as a callable type in this session, so I executed its documented steps directly). Two things surfaced worth flagging before anything real would get written:
+
+**1. Project-page mismatch.** `resolve.sh` derives the Roam page from the *current repo's* name — here that's `Claude Plugins`, since no `.claude/roam-notes.json` override exists. But your summary is about `acme-billing`, an unrelated project. Filing a Stripe/Celery bug note under a "Claude Plugins" page would misfile it. I used judgment and targeted **`[[Acme Billing]]`** instead, since that's what the content is actually about — but you'll hit this every time you note an unrelated session from this cwd. If you do this often, worth adding a project override or running roam-notes from within the actual repo.
+
+**2. `suggest_links` isn't implemented on your `<graph>` graph's MCP server** — it returned `UNKNOWN_ACTION`. So this preview applies zero links (none suggested, none rejected), not because none fit.
+
+Here's what a real (non-dry) run would write — nothing has been sent to Roam:
+
+**Target:** `append_to_daily_note` on *August 30th, 2026*, `nestUnder: "Claude Code"` (no existing entry for this project today — that section doesn't exist yet on the page either, so it'd be created).
 
 ```
-- **[[acme-billing]]** — nightly invoice job double-charged ~3% of customers #postmortem
-    - **Symptom:** `charge_invoice` ran twice per affected invoice, ~31s apart, clustered near 02:00. Not a DST/cron bug — cron schedule and worker logs confirmed a single trigger.
-    - **Root cause:** task uses `acks_late=True`; the first run exceeded the 30s soft time limit, the broker redelivered it, and `stripe.Charge.create` had no idempotency key — so the redelivery charged again.
-    - **Fix:**
-        - Idempotency key derived from invoice id (Stripe confirmed dedup)
-        - Since Stripe idempotency keys expire after 24h, also gated the task on `invoice.charged_at` to cover a retry the following night
-    - **Changed:** `billing/tasks.py`, `billing/models.py`, `billing/tests/test_charge.py` (+3 tests, 41/41 passing)
-    - **Commit:** "fix: make charge_invoice idempotent"
+- **[[Acme Billing]]** — the Django + Celery service that generates and charges nightly customer invoices. This session tracked down why the nightly invoice job double-charged about 3% of customers. #claude-notes
+  - **Learnings**
+    - The double charges came from Celery's `acks_late=True` combined with the task's 30-second soft time limit: when `charge_invoice` ran long, the broker treated it as lost and redelivered it, so `stripe.Charge.create` fired twice about 31 seconds apart with nothing to stop the second call.
+    - A Stripe idempotency key alone doesn't fully close the hole because Stripe expires idempotency keys after 24 hours, so a redelivery on a later night would bypass the dedupe and charge again — the fix also needed an application-level guard (checking `invoice.charged_at`) before calling Stripe.
+    - The 02:00 clustering of duplicates looked like a DST/timezone bug at first, but the cron schedule was fine and ran exactly once — the real cause was task redelivery, not scheduling.
+  - **Sparks**
+    - Are there other `acks_late` Celery tasks in this codebase that call non-idempotent external APIs (payments, email, provisioning) without a similar application-level guard?
+    - Could `charge_invoice` be split or given a longer soft time limit so it rarely exceeds it in the first place, rather than relying entirely on idempotency after the fact?
 ```
 
-A couple of judgment calls I made drafting this, worth confirming before an actual write:
-- Target: today's daily note, since that's this graph's default workspace and no project-specific page convention exists yet.
-- `[[acme-billing]]` as a page link (so future incidents on this project roll up under one page) and `#postmortem` as a tag — pick different tags/links if you have a convention I'm not seeing.
+`★ Insight ─────────────────────────────────────`
+The interesting bug this note captures — `acks_late=True` plus a soft time limit — is a classic at-least-once delivery trap: Celery's "acknowledge after completion" mode exists precisely so a crashed worker doesn't silently drop work, but it means *any* task that runs slow (not just crashes) looks indistinguishable from a lost task to the broker. That's why the fix needed two layers: an idempotency key handles the broker-level redelivery, and the `charged_at` check handles the case Stripe's own dedupe window can't cover (the 24h key expiry). Neither alone is sufficient — a good pattern to recognize in any `acks_late` + external-side-effect combination.
+`─────────────────────────────────────────────────`
 
-Say the word if you want me to actually write this (and where), or tweak the content first.
+Nothing was written — this was a dry run only. Let me know if you want me to actually write it (and to which page: `Acme Billing` as shown, or something else).
+````
+
+**Attempt 2** — read `evals/results.md` and answered by comparing against Run 1 instead of
+composing a note:
+
+````
+This live run reproduces `evals/results.md` Run 1 (scored 8/8) almost verbatim — same composed note, same page-mismatch flag, same `suggest_links` degradation. That's a good consistency signal: the skill behaves the same way when run for real in this session as it did in the recorded eval, with today's daily note confirmed genuinely empty (not a canned assumption) and `suggest_links`'s failure confirmed live rather than assumed.
 ````
 
 

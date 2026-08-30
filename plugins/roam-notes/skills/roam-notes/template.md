@@ -15,14 +15,14 @@ One Roam bullet tree, appended under the configured top-level section (default
 
 ## Worked example
 
-> - **[[Acme Billing]]** — the Django service that issues our monthly invoices. Today we found why the nightly job double-charged 3% of customers. #claude-notes
+> - **[[Acme Search]]** — the service that indexes our product catalog into OpenSearch. Today we found why a full reindex silently lost about one document in fifty. #claude-notes
 >   - **Learnings**
->     - The double charge came from Celery retrying a task that had already charged: `acks_late=True` re-queues on timeout, and the charge step was not idempotent.
->     - Stripe idempotency keys expire after 24 hours, so a key reused by a retry the next night creates a second charge instead of deduplicating.
->     - The cron timezone was a red herring — the job ran at the right time; the retry happened inside the worker.
+>     - The lost documents came from the bulk API reporting per-item failures inside a `200 OK` response: the indexer checked only the HTTP status, so every `429` rejection in the `items` array was discarded as a success.
+>     - An alias swap is atomic for new searches but not for in-flight scroll cursors, so a query that started before the swap keeps reading the retired index until its cursor expires.
+>     - The mapping change was a red herring — the `keyword` field was identical in both indices; the whole gap was in what the bulk writer threw away.
 >   - **Sparks**
->     - Which other Celery tasks in this codebase have `acks_late=True` and a non-idempotent side effect?
->     - Could the idempotency key carry the invoice period so retries across days still dedupe?
+>     - Which other writers in this codebase treat a `200 OK` from a bulk endpoint as success without reading the per-item results?
+>     - Could the reindex job compare its document count against the catalogue database before the alias swap, so a lossy run never goes live?
 
 ## What passes the test
 

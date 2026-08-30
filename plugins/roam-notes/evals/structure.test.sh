@@ -44,7 +44,7 @@ for phrase in "scripts/resolve.sh" "roam-notes:note-companion" "would I have to 
   assert_contains "skill body mentions $phrase" "$sbody" "$phrase"
 done
 assert_file "template exists" "$root/skills/roam-notes/template.md"
-assert_contains "template has Acme example" "$(cat "$root/skills/roam-notes/template.md")" "[[Acme Billing]]"
+assert_contains "template has Acme example" "$(cat "$root/skills/roam-notes/template.md")" "[[Acme Search]]"
 assert_contains "template has Sparks" "$(cat "$root/skills/roam-notes/template.md")" "**Sparks**"
 
 # fixtures + rubric
@@ -63,4 +63,28 @@ assert_file "plugin README" "$root/README.md"
 assert_eq "config.example.json valid" "$(jq -e . "$root/config.example.json" >/dev/null 2>&1 && echo ok)" "ok"
 assert_contains "README has mcp add" "$(cat "$root/README.md" 2>/dev/null)" "claude mcp add --scope user roam-mcp"
 assert_contains "README has plugin install" "$(cat "$root/README.md" 2>/dev/null)" "claude plugin install roam-notes@"
+# leak guard: no fixture MUST-INCLUDE line may appear in the skill or the template
+authored=$(cat "$root/skills/roam-notes/SKILL.md" "$root/skills/roam-notes/template.md" 2>/dev/null)
+for f in debugging-session feature-build config-session; do
+  while IFS= read -r must; do
+    [ -n "$must" ] || continue
+    assert_empty "fixture $f MUST-INCLUDE not leaked: $must" \
+      "$(printf '%s' "$authored" | grep -Fq -- "$must" && echo "appears in SKILL.md or template.md")"
+  done < <(awk '/<!-- MUST-INCLUDE:/{i=1;next} i&&/-->/{i=0} i&&/^- /{sub(/^- /,"");print}' "$root/evals/fixtures/$f.md" 2>/dev/null)
+done
+
+# hand-off parity: the skill writes the block the agent reads
+skill_txt=$(cat "$root/skills/roam-notes/SKILL.md" 2>/dev/null)
+agent_txt=$(cat "$root/agents/note-companion.md" 2>/dev/null)
+for fld in "project:" "graph:" "section:" "tag:" "dry_run:" "anchor:" "learnings:" "sparks:"; do
+  assert_contains "skill hand-off field $fld" "$skill_txt" "$fld"
+  assert_contains "agent hand-off field $fld" "$agent_txt" "$fld"
+done
+
+# the README's install line names the marketplace this repo actually publishes
+repo="$(cd "$root/../.." && pwd)"
+mp_name=$(jq -r .name "$repo/.claude-plugin/marketplace.json" 2>/dev/null)
+readme_mp=$(grep -o 'claude plugin install roam-notes@[A-Za-z0-9._-]*' "$root/README.md" 2>/dev/null | head -1 | sed 's/.*@//')
+assert_eq "README install line names the marketplace" "$readme_mp" "$mp_name"
+
 report
