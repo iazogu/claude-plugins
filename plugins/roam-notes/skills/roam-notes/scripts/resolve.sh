@@ -12,6 +12,8 @@ cwd=$(cd "$cwd" 2>/dev/null && pwd -P) || { echo '{"error":"cwd not found"}'; ex
 machine_cfg="${XDG_CONFIG_HOME:-$HOME/.config}/roam-notes/config.json"
 
 # Main repo root = parent of the common git dir, so a worktree resolves to its primary checkout.
+# A submodule's common dir is <super>/.git/modules/<name>, so it resolves to that path rather
+# than the submodule checkout; a project-level .claude/roam-notes.json "page" is the remedy.
 # Paths are physical (pwd -P): git reports a worktree's common dir as a physical path, so a repo
 # and its own worktree would otherwise disagree whenever a parent directory is a symlink.
 repo_root=""

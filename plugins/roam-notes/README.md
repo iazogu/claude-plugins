@@ -3,7 +3,9 @@
 Memory-trigger notes to Roam at milestones. After a plan completes or a commit lands (or
 when you say "note this"), the session writes an entry to today's daily note — one anchor
 sentence, up to five learnings, up to two sparks — under a `Claude Code` section, tagged
-`#claude-notes`, linked to pages that already exist in your graph.
+`#claude-notes`, linked to pages that already exist in your graph. Auto-linking needs a
+Roam local API that implements `suggest_links`; without it the entry still lands, carrying
+only the project link.
 
 ## Install (any machine)
 
@@ -15,6 +17,12 @@ Then inside Claude Code: "connect my Roam graph" — the `setup_new_graph` tool 
 through approving a Local API token in the Roam desktop app. The token is per machine.
 
 Requirements: Roam desktop app signed in to the graph, `jq`, Node (for `npx`).
+
+## Use
+
+The hooks nudge at milestones; you can also say "note this" or "capture learnings", or
+invoke the skill by hand with `/roam-notes:roam-notes` (plugin skills are namespaced
+`plugin:skill`, and this plugin and its skill share the name).
 
 ## Configure (optional)
 
