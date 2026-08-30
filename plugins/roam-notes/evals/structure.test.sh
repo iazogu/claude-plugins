@@ -30,4 +30,20 @@ body=$(awk 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{f=0;next} !f' "$a")
 for phrase in "dry_run" "outbox" "suggest_links" "already noted" "never" "todaysDailyNotePage" "nestUnder"; do
   assert_contains "agent body mentions $phrase" "$body" "$phrase"
 done
+
+# skill
+s="$root/skills/roam-notes/SKILL.md"
+assert_file "skill exists" "$s"
+sfm=$(awk 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{exit} f' "$s" 2>/dev/null)
+assert_contains "skill name" "$sfm" "name: roam-notes"
+for phrase in "note this" "capture learnings" "Invoke the roam-notes skill" "Roam"; do
+  assert_contains "skill description triggers on '$phrase'" "$sfm" "$phrase"
+done
+sbody=$(awk 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{f=0;next} !f' "$s")
+for phrase in "scripts/resolve.sh" "roam-notes:note-companion" "would I have to re-discover" "5" "2" "nothing worth noting" "Noted to Roam" "dry_run" "template.md"; do
+  assert_contains "skill body mentions $phrase" "$sbody" "$phrase"
+done
+assert_file "template exists" "$root/skills/roam-notes/template.md"
+assert_contains "template has Acme example" "$(cat "$root/skills/roam-notes/template.md")" "[[Acme Billing]]"
+assert_contains "template has Sparks" "$(cat "$root/skills/roam-notes/template.md")" "**Sparks**"
 report
