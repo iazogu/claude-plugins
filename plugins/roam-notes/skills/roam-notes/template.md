@@ -4,7 +4,7 @@ One Roam bullet tree, appended under the configured top-level section (default
 `Claude Code`) on today's daily note:
 
 ```
-- **[[<Project>]]** — <what the project is + what this session was about, one sentence>. <tag>
+- **[[<Project>]]** — <what the project is + what this session was about — one line, at most two short full sentences>. <tag>
   - **Learnings**
     - <complete sentence with its concrete example inside it>
     - …(max 5)
@@ -15,7 +15,7 @@ One Roam bullet tree, appended under the configured top-level section (default
 
 ## Worked example
 
-> - **[[Acme Billing]]** — the Django service that issues our monthly invoices. Today: found why the nightly job double-charged 3% of customers. #claude-notes
+> - **[[Acme Billing]]** — the Django service that issues our monthly invoices. Today we found why the nightly job double-charged 3% of customers. #claude-notes
 >   - **Learnings**
 >     - The double charge came from Celery retrying a task that had already charged: `acks_late=True` re-queues on timeout, and the charge step was not idempotent.
 >     - Stripe idempotency keys expire after 24 hours, so a key reused by a retry the next night creates a second charge instead of deduplicating.

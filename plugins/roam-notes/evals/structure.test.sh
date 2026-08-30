@@ -40,7 +40,7 @@ for phrase in "note this" "capture learnings" "Invoke the roam-notes skill" "Roa
   assert_contains "skill description triggers on '$phrase'" "$sfm" "$phrase"
 done
 sbody=$(awk 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{f=0;next} !f' "$s")
-for phrase in "scripts/resolve.sh" "roam-notes:note-companion" "would I have to re-discover" "5" "2" "nothing worth noting" "Noted to Roam" "dry_run" "template.md"; do
+for phrase in "scripts/resolve.sh" "roam-notes:note-companion" "would I have to re-discover" "at most 5" "at most 2" "nothing worth noting" "Noted to Roam" "dry_run" "template.md"; do
   assert_contains "skill body mentions $phrase" "$sbody" "$phrase"
 done
 assert_file "template exists" "$root/skills/roam-notes/template.md"

@@ -14,8 +14,9 @@ and sparks an idea. The shape and a worked example are in `template.md` (read it
    from the session's working directory (the base directory was announced when this
    skill loaded). Keep the JSON it prints.
 2. **Compose the hand-off** from what happened in this session:
-   - **anchor** — one sentence: what the project *is* plus what this session was about,
-     written for someone who has forgotten the project entirely.
+   - **anchor** — one line, at most two short full sentences: what the project *is*,
+     then what this session was about, written for someone who has forgotten the
+     project entirely.
    - **learnings** — at most 5. Each must pass: *would I have to re-discover this if I
      forgot it?* Each is one complete sentence with its concrete example inside it.
      Non-obvious facts only: causes, quirks, constraints, things that cost time.
