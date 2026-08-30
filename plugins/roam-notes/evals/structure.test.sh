@@ -46,4 +46,15 @@ done
 assert_file "template exists" "$root/skills/roam-notes/template.md"
 assert_contains "template has Acme example" "$(cat "$root/skills/roam-notes/template.md")" "[[Acme Billing]]"
 assert_contains "template has Sparks" "$(cat "$root/skills/roam-notes/template.md")" "**Sparks**"
+
+# fixtures + rubric
+for f in debugging-session feature-build config-session; do
+  p="$root/evals/fixtures/$f.md"
+  assert_file "fixture $f" "$p"
+  assert_contains "fixture $f has MUST-INCLUDE" "$(cat "$p" 2>/dev/null)" "<!-- MUST-INCLUDE:"
+  assert_contains "fixture $f has MUST-EXCLUDE" "$(cat "$p" 2>/dev/null)" "<!-- MUST-EXCLUDE:"
+  assert_empty "fixture $f strips clean" "$(sed '/<!-- MUST-/,/-->/d' "$p" 2>/dev/null | grep -c 'MUST-' | grep -v '^0$')"
+done
+assert_file "rubric" "$root/evals/rubric.md"
+assert_eq "rubric has 8 numbered checks" "$(grep -cE '^[0-9]\. \*\*' "$root/evals/rubric.md" 2>/dev/null)" "8"
 report
