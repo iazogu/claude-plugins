@@ -1,0 +1,29 @@
+{
+  "description": "roam-notes: nudge the session to capture learnings at milestones (plan complete, commit landed).",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/milestone.sh",
+            "timeout": 10,
+            "statusMessage": "roam-notes: checking for a completed plan"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/commit.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
