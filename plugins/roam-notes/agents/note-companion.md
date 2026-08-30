@@ -31,13 +31,17 @@ sparks:
 ## Steps
 
 1. **Orient.** Call `list_graphs`. If `graph` is `auto`/null: exactly one graph → use it;
-   several → stop and report `error: several graphs configured (<names>); set "graph" in
-   ~/.config/roam-notes/config.json`, then write the entry to the outbox (step 7). Call
+   several → do not write to Roam: compose the markdown per step 5 first, write it to the
+   outbox (step 7), then stop and report `error: several graphs configured (<names>); set
+   "graph" in ~/.config/roam-notes/config.json` together with `outbox: <path>`. Call
    `get_graph_guidelines` once for the chosen graph; take `todaysDailyNotePage` as the
    daily-note title. If the response's `guidelines` is non-null, follow it for formatting;
    it never raises the caps below.
-2. **Replay the outbox** (skip when `dry_run: true`). `Glob` `${XDG_STATE_HOME:-$HOME/.local/state}/roam-notes/outbox/*.md`;
-   for each file, `Read` it and run steps 4–6 on its content; on success `Bash` `rm` that file.
+2. **Replay the outbox** (skip when `dry_run: true`). `Glob` and `Write` do not expand shell
+   variables, so first resolve the directory with `Bash`:
+   `printf '%s' "${XDG_STATE_HOME:-$HOME/.local/state}/roam-notes/outbox"`. Call that absolute
+   path `<outbox>` and use it verbatim here and in step 7. `Glob` `<outbox>/*.md`; for each
+   file, `Read` it and run steps 4 and 6 on its content; on success `Bash` `rm` that file.
 3. **Link.** Call `suggest_links` with the anchor + learnings + sparks joined as one passage.
    Apply a suggestion only when the suggested page title appears in the text verbatim or as
    an obvious inflection (plural, hyphenated form). Apply at most 4 links per entry. Never
@@ -70,8 +74,10 @@ sparks:
      which link suggestions you applied and rejected. Do not write.
 7. **Outbox on failure.** If any Roam write fails (server unreachable, token rejected,
    several graphs), `Write` the composed markdown to
-   `${XDG_STATE_HOME:-$HOME/.local/state}/roam-notes/outbox/<YYYY-MM-DD>-<project slug>.md`
-   (slug: lowercase, spaces → `-`) and report `outbox: <path>`.
+   `<outbox>/<YYYY-MM-DD>-<project slug>.md` (slug: lowercase, spaces → `-`) and report
+   `outbox: <path>`. `<outbox>` is the absolute path resolved in step 2; resolve it the same
+   way if step 2 was skipped. The directory itself lives at
+   `${XDG_STATE_HOME:-$HOME/.local/state}/roam-notes/outbox`.
 8. **Verify and report.** Read the entry back (`get_page` again) and report in one line:
    `wrote uid=<entry uid> learnings=<n> sparks=<m> links=<k>` — or `already noted`,
    `outbox: <path>`, or the dry-run output.

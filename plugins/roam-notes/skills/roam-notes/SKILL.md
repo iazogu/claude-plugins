@@ -1,6 +1,6 @@
 ---
 name: roam-notes
-description: Capture memory-trigger learnings from the current work to today's Roam daily note. Use when the user says "note this", "capture learnings", "write this up to Roam", or runs /roam-notes; and whenever a hook message says "Invoke the roam-notes skill now". Writes learnings and sparks only — never a work log.
+description: Capture memory-trigger learnings from the current work to today's Roam daily note. Use when the user says "note this", "capture learnings", "write this up to Roam", or runs /roam-notes:roam-notes; and whenever a hook message says "Invoke the roam-notes skill now". Writes learnings and sparks only — never a work log.
 ---
 
 # roam-notes
@@ -12,7 +12,8 @@ and sparks an idea. The shape and a worked example are in `template.md` (read it
 
 1. **Resolve the target.** Run `bash "<this skill's base directory>/scripts/resolve.sh"`
    from the session's working directory (the base directory was announced when this
-   skill loaded). Keep the JSON it prints.
+   skill loaded). Keep the JSON it prints. If that JSON has an `error` key, relay the
+   error to the user and stop — do not guess a target.
 2. **Compose the hand-off** from what happened in this session:
    - **anchor** — one line, at most two short full sentences: what the project *is*,
      then what this session was about, written for someone who has forgotten the
