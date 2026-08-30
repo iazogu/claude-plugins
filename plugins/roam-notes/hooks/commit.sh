@@ -17,7 +17,8 @@ ensure_state
 marker="$markers_dir/$session.commit-last"
 now=$(date +%s)
 if [ -f "$marker" ]; then
-  last=$(cat "$marker" 2>/dev/null); last=${last:-0}
+  last=$(cat "$marker" 2>/dev/null)
+  case "$last" in ''|*[!0-9]*) last=0;; esac   # corrupt marker: treat as never nudged, rewrite below
   [ $((now - last)) -ge 600 ] || exit 0
 fi
 printf '%s' "$now" > "$marker"

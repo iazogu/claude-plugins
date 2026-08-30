@@ -52,6 +52,9 @@ out=$(post_json c1 'git commit -m again' '[main 1111111] again' | bash "$hooks/c
 printf '%s' "$(( $(date +%s) - 700 ))" > "$XDG_STATE_HOME/roam-notes/markers/c1.commit-last"
 out=$(post_json c1 'git commit -m later' '[main 2222222] later' | bash "$hooks/commit.sh"); assert_contains "commit: after cool-down fires again" "$(ctx "$out")" "[main 2222222]"
 
+printf '%s' 'garbage-not-a-number' > "$XDG_STATE_HOME/roam-notes/markers/c4.commit-last"
+out=$(post_json c4 'git commit -m heal' '[main 4444444] heal' | bash "$hooks/commit.sh"); assert_contains "commit: corrupt marker self-heals" "$(ctx "$out")" "[main 4444444]"
+
 out=$(post_json c2 'git commit -q -m quiet' '' | bash "$hooks/commit.sh"); assert_contains "commit: quiet commit (no stdout) still fires" "$(ctx "$out")" "Milestone: commit landed"
 out=$(post_json c3 'git commit --amend --no-edit' '[main 3333333] amended' | bash "$hooks/commit.sh"); assert_contains "commit: amend counts" "$(ctx "$out")" "[main 3333333]"
 
