@@ -1,8 +1,10 @@
 # roam-notes evals
 
+All commands below run from the repo root.
+
 ## Shell tests (deterministic)
 
-    bash evals/run-all.sh
+    bash plugins/roam-notes/evals/run-all.sh
 
 Covers the resolver, both hooks, manifests/frontmatter, fixtures, and the genericity grep.
 
@@ -11,7 +13,7 @@ Covers the resolver, both hooks, manifests/frontmatter, fixtures, and the generi
 For each fixture, strip the hidden contract, then ask a fresh session with the plugin
 loaded to note it in dry-run mode, and score the output against `rubric.md`:
 
-    f=evals/fixtures/debugging-session.md
+    f=plugins/roam-notes/evals/fixtures/debugging-session.md
     sed '/<!-- MUST-/,/-->/d' "$f" > /tmp/narrative.md
     claude -p --plugin-dir plugins/roam-notes --model sonnet \
       "Here is a summary of a work session I just finished:\n\n$(cat /tmp/narrative.md)\n\nNote this to Roam as a dry run (do not write)."
