@@ -1,0 +1,11 @@
+{
+  "name": "claude-plugins",
+  "owner": { "name": "iazogu" },
+  "plugins": [
+    {
+      "name": "roam-notes",
+      "source": "./plugins/roam-notes",
+      "description": "Memory-trigger notes to Roam at milestones."
+    }
+  ]
+}

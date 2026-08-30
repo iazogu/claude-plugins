@@ -1,0 +1,6 @@
+{
+  "name": "roam-notes",
+  "version": "0.1.0",
+  "description": "Memory-trigger notes to Roam at milestones: hook-nudged, session-extracted, written by a thin agent.",
+  "keywords": ["roam", "notes", "learnings", "hooks"]
+}
