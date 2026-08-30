@@ -19,6 +19,7 @@ now=$(date +%s)
 if [ -f "$marker" ]; then
   last=$(cat "$marker" 2>/dev/null)
   case "$last" in ''|*[!0-9]*) last=0;; esac   # corrupt marker: treat as never nudged, rewrite below
+  last=$((10#$last))                          # a digits-only marker like 08 is decimal, not octal
   [ $((now - last)) -ge 600 ] || exit 0
 fi
 printf '%s' "$now" > "$marker"

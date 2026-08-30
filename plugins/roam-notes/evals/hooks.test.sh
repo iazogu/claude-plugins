@@ -58,4 +58,32 @@ out=$(post_json c4 'git commit -m heal' '[main 4444444] heal' | bash "$hooks/com
 out=$(post_json c2 'git commit -q -m quiet' '' | bash "$hooks/commit.sh"); assert_contains "commit: quiet commit (no stdout) still fires" "$(ctx "$out")" "Milestone: commit landed"
 out=$(post_json c3 'git commit --amend --no-edit' '[main 3333333] amended' | bash "$hooks/commit.sh"); assert_contains "commit: amend counts" "$(ctx "$out")" "[main 3333333]"
 
+# ---------- milestone.sh: the second plans directory ----------
+proj2="$tmp/proj2"; sp="$proj2/docs/superpowers/plans"; mkdir -p "$sp"
+stop2() { jq -n --arg cwd "$2" --arg s "$1" '{session_id:$s, cwd:$cwd, stop_hook_active:false, transcript_path:"/dev/null"}'; }
+
+printf -- '- [x] a\n- [x] b\n' > "$sp/sp1.md"
+out=$(stop2 s4 "$proj2" | bash "$hooks/milestone.sh")
+assert_eq "milestone: complete plan under docs/superpowers/plans → block" "$(printf '%s' "$out" | jq -r .decision)" "block"
+assert_contains "milestone: reason names the superpowers plan" "$(printf '%s' "$out" | jq -r .reason)" "$sp/sp1.md"
+
+# both directories populated: the newest plan across the pair decides
+proj3="$tmp/proj3"; th="$proj3/thoughts/shared/plans"; su="$proj3/docs/superpowers/plans"; mkdir -p "$th" "$su"
+printf -- '- [x] done\n' > "$th/older.md"
+printf -- '- [x] a\n- [ ] b\n' > "$su/newer.md"
+out=$(stop2 s5 "$proj3" | bash "$hooks/milestone.sh")
+assert_empty "milestone: newest plan wins across both dirs (newest unchecked → silent)" "$out"
+
+touch "$th/older.md"   # thoughts plan is now the newest, and it is complete
+out=$(stop2 s6 "$proj3" | bash "$hooks/milestone.sh")
+assert_eq "milestone: newest plan wins across both dirs (newest complete → block)" "$(printf '%s' "$out" | jq -r .decision)" "block"
+assert_contains "milestone: block names the newest plan" "$(printf '%s' "$out" | jq -r .reason)" "$th/older.md"
+
+# ---------- commit.sh: leading-zero marker ----------
+printf '%s' '08' > "$XDG_STATE_HOME/roam-notes/markers/c5.commit-last"
+err="$tmp/c5.err"
+out=$(post_json c5 'git commit -m zero' '[main 5555555] zero' | bash "$hooks/commit.sh" 2>"$err")
+assert_contains "commit: leading-zero marker still nudges" "$(ctx "$out")" "[main 5555555]"
+assert_empty "commit: leading-zero marker is read as decimal, not octal" "$(cat "$err")"
+
 report
