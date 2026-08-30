@@ -36,7 +36,7 @@ sparks:
    `get_graph_guidelines` once for the chosen graph; take `todaysDailyNotePage` as the
    daily-note title. If the response's `guidelines` is non-null, follow it for formatting;
    it never raises the caps below.
-2. **Replay the outbox** (skip when `dry_run: true`). `Glob` `${XDG_STATE_HOME:-~/.local/state}/roam-notes/outbox/*.md`;
+2. **Replay the outbox** (skip when `dry_run: true`). `Glob` `${XDG_STATE_HOME:-$HOME/.local/state}/roam-notes/outbox/*.md`;
    for each file, `Read` it and run steps 4–6 on its content; on success `Bash` `rm` that file.
 3. **Link.** Call `suggest_links` with the anchor + learnings + sparks joined as one passage.
    Apply a suggestion only when the suggested page title appears in the text verbatim or as
@@ -70,7 +70,7 @@ sparks:
      which link suggestions you applied and rejected. Do not write.
 7. **Outbox on failure.** If any Roam write fails (server unreachable, token rejected,
    several graphs), `Write` the composed markdown to
-   `${XDG_STATE_HOME:-~/.local/state}/roam-notes/outbox/<YYYY-MM-DD>-<project slug>.md`
+   `${XDG_STATE_HOME:-$HOME/.local/state}/roam-notes/outbox/<YYYY-MM-DD>-<project slug>.md`
    (slug: lowercase, spaces → `-`) and report `outbox: <path>`.
 8. **Verify and report.** Read the entry back (`get_page` again) and report in one line:
    `wrote uid=<entry uid> learnings=<n> sparks=<m> links=<k>` — or `already noted`,
