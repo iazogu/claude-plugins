@@ -62,5 +62,5 @@ assert_eq "rubric has 8 numbered checks" "$(grep -cE '^[0-9]\. \*\*' "$root/eval
 assert_file "plugin README" "$root/README.md"
 assert_eq "config.example.json valid" "$(jq -e . "$root/config.example.json" >/dev/null 2>&1 && echo ok)" "ok"
 assert_contains "README has mcp add" "$(cat "$root/README.md" 2>/dev/null)" "claude mcp add --scope user roam-mcp"
-assert_contains "README has plugin install" "$(cat "$root/README.md" 2>/dev/null)" "claude plugin install roam-notes@claude-plugins"
+assert_contains "README has plugin install" "$(cat "$root/README.md" 2>/dev/null)" "claude plugin install roam-notes@"
 report

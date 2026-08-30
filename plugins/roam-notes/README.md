@@ -9,7 +9,7 @@ sentence, up to five learnings, up to two sparks — under a `Claude Code` secti
 
     claude mcp add --scope user roam-mcp -- npx -y @roam-research/roam-mcp
     claude plugin marketplace add iazogu/claude-plugins
-    claude plugin install roam-notes@claude-plugins
+    claude plugin install roam-notes@iazogu-plugins
 
 Then inside Claude Code: "connect my Roam graph" — the `setup_new_graph` tool walks you
 through approving a Local API token in the Roam desktop app. The token is per machine.
