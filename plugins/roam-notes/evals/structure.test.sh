@@ -13,4 +13,21 @@ assert_eq "PostToolUse command" "$(jq -r '.hooks.PostToolUse[0].hooks[0].command
 for s in milestone.sh commit.sh; do
   assert_eq "$s is executable" "$( [ -x "$root/hooks/$s" ] && echo yes )" "yes"
 done
+
+# agent
+a="$root/agents/note-companion.md"
+assert_file "agent exists" "$a"
+fm=$(awk 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{exit} f' "$a" 2>/dev/null)
+assert_contains "agent name" "$fm" "name: note-companion"
+assert_contains "agent model sonnet" "$fm" "model: sonnet"
+for t in mcp__roam-mcp__get_graph_guidelines mcp__roam-mcp__list_graphs mcp__roam-mcp__get_page mcp__roam-mcp__get_block mcp__roam-mcp__suggest_links mcp__roam-mcp__append_to_daily_note mcp__roam-mcp__create_block ToolSearch Read Write Glob Bash; do
+  assert_contains "agent tool $t" "$fm" "$t"
+done
+for t in delete_block delete_page update_block update_page move_block create_page; do
+  assert_empty "agent must not list $t" "$(printf '%s' "$fm" | grep -o "mcp__roam-mcp__$t")"
+done
+body=$(awk 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{f=0;next} !f' "$a")
+for phrase in "dry_run" "outbox" "suggest_links" "already noted" "never" "todaysDailyNotePage" "nestUnder"; do
+  assert_contains "agent body mentions $phrase" "$body" "$phrase"
+done
 report
