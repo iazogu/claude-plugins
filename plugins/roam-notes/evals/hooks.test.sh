@@ -32,4 +32,27 @@ out=$(stop_json s2 | bash "$hooks/milestone.sh"); assert_eq "milestone: differen
 touch -t 202001010000 "$plans/p1.md"
 out=$(stop_json s3 | bash "$hooks/milestone.sh"); assert_empty "milestone: stale plan (>48h) → silent" "$out"
 
+# ---------- commit.sh (PostToolUse / Bash) ----------
+post_json() { jq -n --arg s "$1" --arg cmd "$2" --arg so "${3:-}" --argjson ec "${4:-0}" --arg tn "${5:-Bash}" \
+  '{session_id:$s, cwd:"/tmp", tool_name:$tn, tool_input:{command:$cmd}, tool_response:{stdout:$so, stderr:"", exit_code:$ec, interrupted:false}}'; }
+ctx() { printf '%s' "$1" | jq -r '.hookSpecificOutput.additionalContext // empty'; }
+
+out=$(post_json c1 'ls -la' | bash "$hooks/commit.sh"); assert_empty "commit: non-git command → silent" "$out"
+out=$(post_json c1 'git log --grep "commit" --oneline' | bash "$hooks/commit.sh"); assert_empty "commit: git log mentioning commit → silent" "$out"
+out=$(post_json c1 'git commit --dry-run' | bash "$hooks/commit.sh"); assert_empty "commit: --dry-run → silent" "$out"
+out=$(post_json c1 'git commit -m x' '' 1 | bash "$hooks/commit.sh"); assert_empty "commit: exit 1 → silent" "$out"
+out=$(post_json c1 'git commit -m x' '[main abc1234] x' 0 Read | bash "$hooks/commit.sh"); assert_empty "commit: non-Bash tool → silent" "$out"
+
+out=$(post_json c1 'git add -A && git commit -m "feat: x"' '[main 9f8e7d6] feat: x' | bash "$hooks/commit.sh")
+assert_eq "commit: hookEventName" "$(printf '%s' "$out" | jq -r .hookSpecificOutput.hookEventName)" "PostToolUse"
+assert_contains "commit: context names commit line" "$(ctx "$out")" "[main 9f8e7d6]"
+assert_contains "commit: context carries nudge" "$(ctx "$out")" "Invoke the roam-notes skill now"
+
+out=$(post_json c1 'git commit -m again' '[main 1111111] again' | bash "$hooks/commit.sh"); assert_empty "commit: within cool-down → silent" "$out"
+printf '%s' "$(( $(date +%s) - 700 ))" > "$XDG_STATE_HOME/roam-notes/markers/c1.commit-last"
+out=$(post_json c1 'git commit -m later' '[main 2222222] later' | bash "$hooks/commit.sh"); assert_contains "commit: after cool-down fires again" "$(ctx "$out")" "[main 2222222]"
+
+out=$(post_json c2 'git commit -q -m quiet' '' | bash "$hooks/commit.sh"); assert_contains "commit: quiet commit (no stdout) still fires" "$(ctx "$out")" "Milestone: commit landed"
+out=$(post_json c3 'git commit --amend --no-edit' '[main 3333333] amended' | bash "$hooks/commit.sh"); assert_contains "commit: amend counts" "$(ctx "$out")" "[main 3333333]"
+
 report
