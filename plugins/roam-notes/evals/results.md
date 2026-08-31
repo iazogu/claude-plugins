@@ -251,3 +251,88 @@ From `/tmp/roam-notes-live-test` (fresh git repo, plugin installed, `--dangerous
 - Relay line: `Noted to Roam: [[Roam Notes Live Test]], 2026-08-30 — 2 learnings, 1 spark.` plus the derived-page override hint, exactly per SKILL.md step 4.
 - Read back via `get_page` on the daily note: entry block `KPdyd6wfk` under a new top-level `Claude Code` section (`VyNTCIejU`), anchor within the two-short-sentences rule, 2 full-sentence learnings, 1 question-form spark, `#claude-notes` tag present.
 - Cleanup verified: deleted section block `VyNTCIejU` (whole tree) and the link-created page `Roam Notes Live Test` (`0mbogn067`, empty, 0 refs); daily note restored to its prior (empty) state.
+
+
+## v0.2.0 re-run — revision pass added to the skill (2026-08-31)
+
+The skill gained a mandatory "Revise before dispatching" step (distilled from the
+technical-writer method: audit each line against binary checks before emitting), after the
+user observed that invoking a revision skill on top of 0.1.0 improved note quality. All
+three fixtures re-run against the working tree (installed 0.1.0 disabled, `--plugin-dir`):
+
+| Run | Score | Learnings | Notes |
+|---|---|---|---|
+| debugging-session | 8/8 | 4 | red-herring framed as ruled-out cause, per template |
+| feature-build | 8/8 | 3 | file/test counts correctly excluded |
+| config-session | 8/8 | 4 | commands appear as referents, not as a step list |
+
+**Measured effect of the revision step:** 11 learnings, avg **28.8 words** (max 38)
+vs 0.1.0's 9 learnings, avg **37.4 words** (max 45) — a ~23% tightening at equal
+rubric scores. `suggest_links` still errors (`UNKNOWN_ACTION`) on this graph — check 5 remains
+vacuous. Page derivation still follows the resolver (cwd), with the narrative project named in
+the anchor; both runs flag the mismatch unprompted, which is the designed behaviour for
+narrative≠cwd eval conditions.
+
+### Transcripts (verbatim, graph name scrubbed)
+
+```
+===== RUN: debugging-session =====
+Dry-run preview came back — no write performed. Here's what it would look like:
+
+**Would append** under a new "Claude Code" section on today's daily note (`August 31st, 2026`) in Roam.
+
+```
+- **[[Claude Plugins]]** — acme-billing is a Django + Celery invoicing service; this session tracked down why the nightly invoice job double-charged about 3% of customers. #claude-notes
+  - **Learnings**
+    - The double charge came from Celery's `acks_late=True` combined with a 30-second soft time limit: when `charge_invoice` ran long, the broker treated it as failed and redelivered it, so it re-ran and charged again about 31 seconds later.
+    - `stripe.Charge.create` was called without an idempotency key, so the redelivered task had nothing stopping it from charging Stripe a second time.
+    - Stripe idempotency keys expire after 24 hours, so relying on the key alone would still double-charge on a retry the following night — the fix also checks `invoice.charged_at` before calling Stripe.
+    - The initial suspicion of a DST/timezone bug in the 02:00 cron schedule was a red herring; the cron fired exactly once and the duplication came from task-level redelivery, not scheduling.
+  - **Sparks**
+    - Are there other Celery tasks in this codebase with `acks_late=True` and an external side effect (charges, emails, notifications) that still lack idempotency protection?
+    - Should `charge_invoice`'s soft time limit be raised, or the task split, so a normal run never gets close to the redelivery threshold?
+```
+
+Two things worth your attention before a real write:
+
+1. **Page mismatch, confirmed real** — the resolver still filed this under `[[Claude Plugins]]` (this session's repo), not `[[acme-billing]]` (what the content is actually about). If you run this for real, tell me the project explicitly or set up an override so it lands on the right page.
+2. **`suggest_links` is broken** on this graph — it returned `UNKNOWN_ACTION: data.ai.suggestLinks`, so zero link suggestions were possible (not zero found — the feature errored). Worth knowing if you rely on auto-linking elsewhere.
+
+No files or Roam state were touched — purely a preview, as requested.
+
+===== RUN: feature-build =====
+Dry run complete — nothing was written to Roam. Preview of what *would* be appended to today's daily note (`August 31st, 2026`), under a new `Claude Code` section:
+
+```
+- **[[Claude Plugins]]** — trail-maps is a Next.js 15 / Mapbox GL app for hikers; this session added offline caching of map tiles so a downloaded region stays viewable without signal. #claude-notes
+  - **Learnings**
+    - Next.js App Router doesn't register a service worker for you — it must be registered via `navigator.serviceWorker.register` from a client component after mount, or it never installs in production builds.
+    - On iPhone, Safari caps Cache Storage at roughly 50MB per origin, which silently stopped tile caching from growing until LRU eviction keyed by last access was added.
+    - Mapbox tile URLs carry the `access_token` query parameter, so caching by full URL was persisting the token in on-device Cache Storage; stripping the query string from the cache key and re-appending the token on fetch closed that leak.
+  - **Sparks**
+    - How should region-size estimates account for the ~50MB Safari Cache Storage ceiling when telling users how much they can download?
+    - Are other secrets riding along in query strings elsewhere in the app, at risk of the same on-device persistence leak?
+```
+
+Two things worth noting:
+- Page title is **"Claude Plugins"** (derived from this repo, not "trail-maps") — as flagged earlier, since your session summary is about a different project, you'd want an override so future notes land on the right page.
+- `suggest_links` errored server-side on this graph (`UNKNOWN_ACTION`), so no auto-linking was attempted — unrelated to the dry-run itself.
+
+===== RUN: config-session =====
+Dry-run preview (nothing written to Roam):
+
+> - **[[Claude Plugins]]** — home-lab is a Raspberry Pi behind Tailscale (no git repo). Today's session turned it into a Tailscale exit node so phones can route traffic through home. #claude-notes
+>   - **Learnings**
+>     - `tailscale up --advertise-exit-node` succeeds silently and shows the node as up, but routes no traffic until an admin approves the exit node in the Tailscale admin console's machine route settings.
+>     - Even after admin approval, exit-node routing stayed broken until IP forwarding was turned on with `sysctl -w net.ipv4.ip_forward=1`.
+>     - The `ip_forward` sysctl resets on every reboot, so it has to be persisted in `/etc/sysctl.d/99-tailscale.conf` or the exit node stops routing again after a restart.
+>     - Initial exit-node throughput was poor despite an idle CPU; the real bottleneck was the SD card being hammered by logging and swap, fixed by moving swap off the SD card.
+>   - **Sparks**
+>     - Are there other Tailscale features (like subnet routers) that silently no-op pending admin approval, worth checking for on this same Pi?
+>     - Now that swap is off the SD card, would moving logs to tmpfs or an external drive squeeze out more throughput, or was the SD card contention the whole story?
+
+Would land under **Claude Code** on today's daily note (2026-08-31) in graph `<graph>`. Two things to flag before a real write:
+
+- **Page mismatch**: it's filed under `[[Claude Plugins]]` because the resolver derived that from this repo's directory — the content is about a separate home-lab project with no repo of its own. Worth an override (or just editing the page link) before writing for real.
+- **No auto-links applied**: `suggest_links` errored on the roam-mcp server side (`UNKNOWN_ACTION`), so link suggestions weren't available this run — not a content issue, just a tool gap.
+```

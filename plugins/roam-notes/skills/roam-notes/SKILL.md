@@ -24,7 +24,15 @@ and sparks an idea. The shape and a worked example are in `template.md` (read it
    - **sparks** — at most 2 questions or possibilities the learnings open up. Never
      imperatives, never tasks. May be empty.
    If no learning passes the test, say **"nothing worth noting this time"** and stop.
-3. **Dispatch the agent** `roam-notes:note-companion` with this exact block followed by
+3. **Revise before dispatching.** Re-read the hand-off as a stranger and check every
+   line; rewrite or cut, never pad:
+   - each learning: one idea, a complete sentence, a concrete referent (a name, value,
+     or command), passes the re-discovery test, and stays under roughly 30 words;
+   - the anchor: at most two short sentences — project, what it is, what today was;
+   - each spark: genuinely opened by the learnings, phrased as a question;
+   - more than 5 learnings surviving means cut the weakest — never summarise two
+     into one.
+4. **Dispatch the agent** `roam-notes:note-companion` with this exact block followed by
    the resolver JSON:
    ```
    project: <page from resolver>     graph: <graph from resolver, or auto if null>
@@ -37,7 +45,7 @@ and sparks an idea. The shape and a worked example are in `template.md` (read it
      - <sentence>
    ```
    Set `dry_run: true` only when the user asked for a dry run or preview.
-4. **Relay one line** from the agent's report and carry on with the session's work:
+5. **Relay one line** from the agent's report and carry on with the session's work:
    `Noted to Roam: [[<page>]], <date> — <n> learnings, <m> sparks.` If the report says
    `already noted`, `outbox: <path>`, or an error, relay that instead — including the
    config path when several graphs are configured. If `pageSource` was `derived`,

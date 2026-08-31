@@ -87,4 +87,10 @@ mp_name=$(jq -r .name "$repo/.claude-plugin/marketplace.json" 2>/dev/null)
 readme_mp=$(grep -o 'claude plugin install roam-notes@[A-Za-z0-9._-]*' "$root/README.md" 2>/dev/null | head -1 | sed 's/.*@//')
 assert_eq "README install line names the marketplace" "$readme_mp" "$mp_name"
 
+# the skill carries the distilled revision pass (v0.2.0)
+srev=$(cat "$root/skills/roam-notes/SKILL.md" 2>/dev/null)
+assert_contains "skill has revise step" "$srev" "Revise before dispatching"
+assert_contains "revise step demands concrete referent" "$srev" "concrete referent"
+assert_contains "revise step cuts the weakest" "$srev" "cut the weakest"
+
 report
